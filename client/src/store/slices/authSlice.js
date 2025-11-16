@@ -29,6 +29,7 @@ export const loginUser = createAsyncThunk(
           role,
         };
       } else {
+        console.log(console.log("error-> ", ))
         // If response is not successful but no error was thrown
         return rejectWithValue({
           message: response.data?.message || "Login failed",
@@ -36,6 +37,7 @@ export const loginUser = createAsyncThunk(
       }
     } catch (error) {
       if (
+        
         error.response?.status === 403 &&
         error.response?.data?.requiresVerification
       ) {

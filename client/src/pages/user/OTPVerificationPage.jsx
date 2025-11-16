@@ -126,6 +126,7 @@ export default function OTPVerificationPage() {
   // Verify OTP
   const handleVerifyOtp = async () => {
     const otpValue = otp.join("");
+    const isForgetPassword = location.state?.forget;
 
     if (otpValue.length !== 6) {
       // Error handling is now done through Redux
@@ -138,22 +139,54 @@ export default function OTPVerificationPage() {
     }
 
     try {
-      // Use Redux action to verify OTP
-      await dispatch(verifyOTP({ email, otp: otpValue })).unwrap();
+      // If this is forget password flow, just verify OTP without logging in
+      if (isForgetPassword) {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/auth/verify-otp-only`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, otp: otpValue }),
+          }
+        );
 
-      // Clear timer from localStorage on successful verification
-      localStorage.removeItem("otpExpiry");
-      setVerified(true);
+        const data = await response.json();
 
-      // Redirect to course list page after successful verification
-      // For student signup, redirect directly to course page
-      setTimeout(() => {
-        navigate("/course", {
-          replace: true,
-        });
-      }, 1500);
-    } catch {
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "OTP verification failed");
+        }
+
+        // Clear timer from localStorage on successful verification
+        localStorage.removeItem("otpExpiry");
+        setVerified(true);
+
+        // Redirect to reset password page
+        setTimeout(() => {
+          navigate("/reset-password", {
+            state: { email, otpVerified: true },
+            replace: true,
+          });
+        }, 1500);
+      } else {
+        // Normal signup flow
+        // Use Redux action to verify OTP
+        await dispatch(verifyOTP({ email, otp: otpValue })).unwrap();
+
+        // Clear timer from localStorage on successful verification
+        localStorage.removeItem("otpExpiry");
+        setVerified(true);
+
+        // Redirect to course list page after successful verification
+        // For student signup, redirect directly to course page
+        setTimeout(() => {
+          navigate("/course", {
+            replace: true,
+          });
+        }, 1500);
+      }
+    } catch (error) {
       // Error is handled by Redux, but we still need to reset the form
+      console.error("OTP verification error:", error);
       setOtp(["", "", "", "", "", ""]);
       document.getElementById("otp-0")?.focus();
     }

@@ -11,6 +11,8 @@ import InstructorLayout from "./components/InstructorLayout.jsx";
 import UserCourseListingPage from "./pages/user/CourseListingPage.jsx";
 import UserLoginPage from "./pages/user/LoginPage.jsx";
 import UserOTPVerificationPage from "./pages/user/OTPVerificationPage.jsx";
+import StudentForgetPassword from "./pages/user/StudentForgetPassword.jsx";
+import ResetPassword from "./pages/user/Password.jsx";
 import CartPage from "./pages/user/CartPage.jsx";
 import CheckoutPage from "./pages/user/CheckoutPage.jsx";
 // Instructor Import
@@ -20,7 +22,7 @@ import InstructorOTPVerificationPage from "./pages/instructor/OTPVerificationPag
 import InstructorDashboard from "./pages/instructor/Dashboard.jsx";
 import CoursesPage from "./pages/instructor/CoursesPage.jsx";
 import CourseDetailPage from "./pages/instructor/CourseDetailPage.jsx";
-import CommunicationPage from "./pages/instructor/CommunicationPage.jsx";
+
 
 // Admin import
 import AdminLoginPage from "./pages/admin/LoginPage.jsx";
@@ -46,34 +48,35 @@ function App() {
   useEffect(() => {
     const checkUserStatusOnLoad = async () => {
       const accessToken = localStorage.getItem("accessToken");
-      
+
       if (!accessToken) {
         setIsLoading(false);
         return;
       }
-      
+
       const tokenExpired = isTokenExpired(accessToken);
-      
+
       if (tokenExpired) {
         console.log("Token expired on load, clearing");
         localStorage.removeItem("accessToken");
+        localStorage.removeItem('userData')
         return;
       }
-      
+
       try {
         const userResponse = await api.get("/auth/me");
-        
+
         if (userResponse.data.user?.isBlocked) {
           console.log("User is blocked, logging out");
           localStorage.removeItem("accessToken");
           window.location.href = "/login";
           return;
         }
-        
+
         console.log("User status checked, all good");
       } catch (error) {
         console.log("Error checking user status:", error.message);
-        
+
         if (error.response?.data?.isBlocked) {
           console.log("User is blocked, logging out");
           localStorage.removeItem("accessToken");
@@ -105,18 +108,17 @@ function App() {
   return (
     <div>
       <Routes>
-   
         <Route path="/">
-<Route path="login" element={<UserLoginPage />} />
+          <Route path="login" element={<UserLoginPage />} />
           <Route path="signup" element={<UserSignupPage />} />
+          <Route path="forgot-password" element={<StudentForgetPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
         </Route>
-        
-
 
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<LandingPage />} />
-          
+
           <Route
             path="course"
             element={
@@ -146,7 +148,10 @@ function App() {
         <Route path="/instructor" element={<InstructorLayout />}>
           <Route path="login" element={<InstructorLoginPage />} />
           <Route path="signup" element={<InstructorSignupPage />} />
-          <Route path="verify-otp" element={<InstructorOTPVerificationPage />} />
+          <Route
+            path="verify-otp"
+            element={<InstructorOTPVerificationPage />}
+          />
           <Route
             path="dashboard"
             element={
@@ -171,7 +176,6 @@ function App() {
               </AuthGuard>
             }
           />
-        
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -183,8 +187,6 @@ function App() {
           <Route path="instructors/:id" element={<InstructorDetail />} />
         </Route>
       </Routes>
-
-   
     </div>
   );
 }

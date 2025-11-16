@@ -13,8 +13,9 @@ import {
 } from "../controllers/instructor/instructorController.js";
 import { User } from "../models/User.js";
 import { Instructor } from "../models/Instructor.js";
-import { sentOTP, verifyOTP } from "../utils/OTPServices.js";
+import { sentOTP, verifyOTP, verifyOTPOnly } from "../utils/OTPServices.js";
 import { generateTokens } from "../utils/generateTokens.js";
+import { resetPassword } from "../controllers/common/forgetPassword.js";
 const router = express.Router();
 
 // Instructor Routes
@@ -35,6 +36,10 @@ router.post("/admin/login", adminLogin);
 // OTP
 router.post("/send-otp", sentOTP);
 router.post("/verify-otp", verifyOTP);
+router.post("/verify-otp-only", verifyOTPOnly);
+
+// Password Reset
+router.post("/reset-password", resetPassword);
 
 // Check username availability using query params
 router.get("/check-username", async (req, res) => {
@@ -116,6 +121,8 @@ router.post("/refresh", async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
+
+    console.log(user)
     if (user.isBlocked) {
       console.log("User is blocked");
       return res
@@ -186,9 +193,7 @@ router.get("/me", async (req, res) => {
     }
 
     const decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
-    // console.log("Decoded token:", decoded);
 
-    // Check user in database to verify blocked status
     let user = await User.findById(decoded.id);
     if (!user) {
       user = await Instructor.findById(decoded.id);
